@@ -29,6 +29,8 @@ Publishing: `npm publish` (the `prepack` step runs `sync:assets`, which needs th
 | `tool_result` | PostToolUse | Appends a note after an approved action, medium-risk prompt-injection warnings, and heuristic scan results for tool output. |
 | `session_start` | SessionStart | Scans installed pi extensions/packages and skills; shows notices and findings. |
 
+With `manage_status_line` enabled in `~/.sage/config.json` (default), the extension maintains a footer status line (blocked/flagged counts and recent reason, plus fresh risky skill findings) via pi's status API. Disable it there if you set your own.
+
 Covered tools: `bash`, `powershell`, `read`, `write`, `edit`, `grep`, `find`, `ls`, plus `url_context` and `web_search` from [`pi-web-search`](https://www.npmjs.com/package/pi-web-search).
 
 The Sage MCP server is registered as `sage`, providing `sage_report_false_positive` and `sage_list_audit_entries`. It requires pi's built-in MCP support (on by default).

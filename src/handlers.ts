@@ -31,6 +31,7 @@ export interface HandlerContext {
 	ui: {
 		confirm(title: string, message: string, opts?: { signal?: AbortSignal }): Promise<boolean>;
 		notify(message: string, type?: "info" | "warning" | "error"): void;
+		setStatus?(key: string, text: string): void;
 	};
 	sessionManager: { getSessionId(): string };
 }
@@ -52,6 +53,8 @@ export interface HandlerDeps {
 	logger: Logger;
 	branding: Branding;
 	agentRuntimeVersion?: string;
+	/** Status-line hook: invoked with every non-allow verdict + its session. */
+	onNonAllow?: (sessionId: string, verdict: Verdict) => void;
 }
 
 interface PendingApproval {
@@ -135,6 +138,7 @@ export function createHandlers(deps: HandlerDeps) {
 				},
 				evaluationContext,
 			);
+			if (verdict.decision !== "allow") deps.onNonAllow?.(sessionId, verdict);
 		} catch (error) {
 			logger.error(`${branding.name} pi tool_call failed open`, {
 				error: String(error),

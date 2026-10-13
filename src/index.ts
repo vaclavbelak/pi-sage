@@ -17,6 +17,7 @@ import { getAgentDir, VERSION as PI_VERSION } from "@earendil-works/pi-coding-ag
 import { createHandlers, type HandlerContext } from "./handlers.ts";
 import { MCP_SERVER_PATH, PI_RUNTIME } from "./runtime.ts";
 import { type PiSourceInfo, runSessionScan } from "./session.ts";
+import { createStatusLine } from "./status.ts";
 
 export default async function sage(pi: ExtensionAPI): Promise<void> {
 	const config = await loadConfig();
@@ -24,18 +25,34 @@ export default async function sage(pi: ExtensionAPI): Promise<void> {
 	const logger = operational.forComponent("extension");
 	const branding = resolveBranding(config.brand_key, logger);
 
+	// Status line reflects non-allow verdicts and fresh risky-skill findings.
+	// File state lives in core (~/.sage/statusline-*.txt); this only renders.
+	const statusLine = config.manage_status_line ? createStatusLine(branding, config) : undefined;
+
 	const handlers = createHandlers({
 		logger: operational.forComponent("tool-handler"),
 		branding,
 		agentRuntimeVersion: PI_VERSION,
+		onNonAllow: statusLine
+			? (sessionId, verdict) => statusLine.record(sessionId, verdict)
+			: undefined,
 	});
 
-	pi.on("tool_call", (event, ctx) =>
-		handlers.onToolCall(event as never, ctx as unknown as HandlerContext),
-	);
-	pi.on("tool_result", (event, ctx) =>
-		handlers.onToolResult(event as never, ctx as unknown as HandlerContext) as never,
-	);
+	// The render itself is guarded and fire-and-forget: never blocks enforcement.
+	const renderStatus = statusLine
+		? (ctx: HandlerContext) => void statusLine.render(ctx)
+		: undefined;
+
+	pi.on("tool_call", async (event, ctx) => {
+		const result = await handlers.onToolCall(event as never, ctx as unknown as HandlerContext);
+		renderStatus?.(ctx as unknown as HandlerContext);
+		return result;
+	});
+	pi.on("tool_result", async (event, ctx) => {
+		const result = await handlers.onToolResult(event as never, ctx as unknown as HandlerContext);
+		renderStatus?.(ctx as unknown as HandlerContext);
+		return result as never;
+	});
 
 	// sage_report_false_positive / sage_list_audit_entries. A user-defined "sage" server wins.
 	try {
@@ -55,6 +72,9 @@ export default async function sage(pi: ExtensionAPI): Promise<void> {
 	const delivered = new Set<string>();
 	pi.on("session_start", (_event, ctx) => {
 		const sessionId = ctx.sessionManager.getSessionId();
+		if (statusLine) {
+			void statusLine.start(sessionId).then(() => statusLine.render(ctx));
+		}
 		let scan = scans.get(sessionId);
 		if (!scan) {
 			const input = {
@@ -77,6 +97,8 @@ export default async function sage(pi: ExtensionAPI): Promise<void> {
 
 		// Don't hold up startup; deliver when the scan finishes.
 		void scan.then((messages) => {
+			// Skill verdicts may have landed during the scan — refresh the footer.
+			void statusLine?.render(ctx);
 			if (delivered.has(sessionId) || messages.length === 0) return;
 			try {
 				if (!ctx.hasUI) return;
