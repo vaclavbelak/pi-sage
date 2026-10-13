@@ -1,0 +1,35 @@
+Sage
+Copyright 2026 Gen Digital Inc.
+
+This product includes software developed by Gen Digital Inc.
+https://www.gendigital.com/
+
+---
+
+Licensing:
+
+This project uses a dual-license structure:
+
+- Source code: Apache License 2.0 (see LICENSE)
+- Threat detection rules (threats/): Detection Rule License 1.1 (see threats/LICENSE)
+
+The DRL 1.1 requires that detection output based on rule matches must retain
+author attribution. The default author for all rules is Gen Digital Inc.
+
+---
+
+Cloud Services Notice:
+
+Gen Digital's cloud services are provided exclusively for use with authorized
+Sage distributions. Unauthorized access to these services is prohibited. Use
+of these services is governed by Avast's End User License Agreement (https://www.avast.com/eula), not by the
+Apache 2.0 license of this source code. For full details on data processing,
+see Avast's Privacy Policy (https://www.avast.com/privacy-policy).
+
+---
+
+Third-party dependencies:
+
+- yaml (ISC License) - https://github.com/eemeli/yaml
+- zod (MIT License) - https://github.com/colinhacks/zod
+- pino (MIT License) - https://github.com/pinojs/pino
