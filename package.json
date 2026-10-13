@@ -34,8 +34,8 @@
     "test:e2e": "PI_SAGE_E2E=1 vitest run src/__tests__/e2e.test.ts"
   },
   "dependencies": {
-    "@gendigital/sage-core": "^0.13.0",
-    "@gendigital/sage-mcp": "^0.13.0"
+    "@gendigital/sage-core": "^0.14.0",
+    "@gendigital/sage-mcp": "^0.14.0"
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "*",
