@@ -5,7 +5,7 @@
 ## Install
 
 ```bash
-pi install npm:pi-sage
+pi install npm:@vaclavbelak/pi-sage
 ```
 
 Pi installs the dependencies (`@gendigital/sage-core`, `@gendigital/sage-mcp`) from npm.

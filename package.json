@@ -1,5 +1,5 @@
 {
-  "name": "pi-sage",
+  "name": "@vaclavbelak/pi-sage",
   "version": "0.1.0",
   "description": "Sage (Safety for Agents) connector for the pi coding agent",
   "type": "module",

@@ -22,7 +22,7 @@ describe("pluginsFromSources", () => {
 		const ext = join(root, "extensions", "mine.ts");
 		mkdirSync(join(root, "extensions"), { recursive: true });
 		writeFileSync(ext, "export default () => {}");
-		const self = join(root, "npm", "node_modules", "pi-sage");
+		const self = join(root, "npm", "node_modules", "@vaclavbelak", "pi-sage");
 		mkdirSync(self, { recursive: true });
 
 		const plugins = pluginsFromSources(
