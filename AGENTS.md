@@ -27,7 +27,7 @@ npm run test:e2e      # live: needs authenticated `pi` and a working model
 
 - Fail-open: an internal error must never block a tool. pi blocks when a `tool_call` handler throws, so every handler catches everything. Verdict-driven blocks are the only blocks.
 - `ask` with no UI (print/JSON/RPC) is denied.
-- Only map tools that exist in pi or that overlap other Sage connectors. `url_context`/`web_search` come from the `pi-web-search` package.
+- Only map tools that exist in pi or that overlap other Sage connectors. `web_search`/`fetch_content`/`source_check` come from the `pi-web-access` package (`get_search_content` is a local lookup and stays unmapped).
 - Never re-assert detection in tests here; use Sage's canary rules (`threats/dummy.yaml`) for wiring checks only.
 - Tests must isolate `HOME` (see `src/__tests__/setup.ts`) so `~/.sage` is never touched.
 - pi docs are the source of truth for the extension API: `docs/extensions.md` in the installed `@earendil-works/pi-coding-agent`.

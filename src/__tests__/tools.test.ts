@@ -8,7 +8,10 @@ describe("canonicalTool", () => {
 	it("maps pi tools and ignores unknown / canonical-looking names", () => {
 		expect(canonicalTool("bash")).toBe("Bash");
 		expect(canonicalTool("find")).toBe("Glob");
-		expect(canonicalTool("url_context")).toBe("WebFetch");
+		expect(canonicalTool("fetch_content")).toBe("WebFetch");
+		expect(canonicalTool("web_search")).toBe("WebSearch");
+		expect(canonicalTool("source_check")).toBe("WebSearch");
+		expect(canonicalTool("url_context")).toBeUndefined();
 		expect(canonicalTool("Task")).toBeUndefined();
 		expect(canonicalTool("subagent")).toBeUndefined();
 	});
@@ -54,19 +57,29 @@ describe("prepareToolCall", () => {
 		expect(p?.toolName).toBe("Write");
 		expect(p?.toolInput.file_path).toBe(`${homedir()}/.bashrc`);
 	});
-	it("url_context → one url artifact per URL", () => {
+	it("fetch_content → one url artifact per URL (url + urls, deduped)", () => {
 		const p = prepareToolCall(
-			"url_context",
-			{ query: "q", urls: ["https://a.test", "https://b.test"] },
+			"fetch_content",
+			{ url: "https://a.test", urls: ["https://a.test", "https://b.test"] },
 			cwd,
 		);
 		expect(p?.toolName).toBe("WebFetch");
 		expect(p?.artifacts.map((a) => a.value)).toEqual(["https://a.test", "https://b.test"]);
 		expect(p?.toolInput.url).toBe("https://a.test");
 	});
-	it("web_search → query content + optional urls", () => {
-		const p = prepareToolCall("web_search", { query: "hi", urls: ["https://a.test"] }, cwd);
-		expect(p?.artifacts.map((a) => a.type)).toEqual(["content", "url"]);
+	it("web_search → content artifact per query/queries", () => {
+		const p = prepareToolCall("web_search", { query: "hi", queries: ["ho", "hi"] }, cwd);
+		expect(p?.toolName).toBe("WebSearch");
+		expect(p?.artifacts.map((a) => a.value)).toEqual(["hi", "ho"]);
+	});
+	it("source_check → claim content artifact", () => {
+		const p = prepareToolCall("source_check", { claim: "the earth is flat" }, cwd);
+		expect(p?.toolName).toBe("WebSearch");
+		expect(p?.artifacts[0]).toMatchObject({
+			type: "content",
+			value: "the earth is flat",
+			context: "websearch_query",
+		});
 	});
 	it("ls without path lists cwd", () => {
 		expect(prepareToolCall("ls", {}, cwd)?.artifacts[0]).toMatchObject({

@@ -2,8 +2,8 @@
  * pi tool vocabulary → Sage canonical tools + artifact extraction.
  *
  * pi built-ins: bash, powershell, read, write, edit, grep, find, ls.
- * pi has no built-in web tool; `url_context` / `web_search` come from the
- * `pi-web-search` package and are mapped when present.
+ * pi has no built-in web tool; `web_search` / `fetch_content` / `source_check`
+ * come from the `pi-web-access` package and are mapped when present.
  */
 
 import { homedir } from "node:os";
@@ -26,8 +26,9 @@ export const PI_TOOL_MAP: Readonly<Record<string, CanonicalToolType>> = {
 	grep: "Grep",
 	find: "Glob",
 	ls: "List",
-	url_context: "WebFetch",
+	fetch_content: "WebFetch",
 	web_search: "WebSearch",
+	source_check: "WebSearch",
 };
 
 export function canonicalTool(rawName: string): CanonicalToolType | undefined {
@@ -108,16 +109,16 @@ export function prepareToolCall(
 			artifacts.push({ type: "file_path", value: path || resolve(cwd), context: "list" });
 			break;
 		case "WebFetch": {
-			const urls = strList(input.urls);
+			// fetch_content accepts `url` (single) or `urls` (parallel).
+			const urls = [...new Set([str(input.url), ...strList(input.urls)])].filter((u) => u.length > 0);
 			toolInput = { ...input, url: urls[0] ?? "" };
 			artifacts = urls.map((value) => ({ type: "url", value, context: "webfetch" }));
 			break;
 		}
 		case "WebSearch": {
-			const query = str(input.query);
-			if (query) artifacts.push({ type: "content", value: query, context: "websearch_query" });
-			for (const value of strList(input.urls)) {
-				artifacts.push({ type: "url", value, context: "websearch_url" });
+			// web_search: query/queries; source_check: claim/queries.
+			for (const value of new Set([str(input.query), str(input.claim), ...strList(input.queries)])) {
+				if (value) artifacts.push({ type: "content", value, context: "websearch_query" });
 			}
 			break;
 		}

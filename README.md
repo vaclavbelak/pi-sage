@@ -31,7 +31,7 @@ Publishing: `npm publish` (the `prepack` step runs `sync:assets`, which needs th
 
 With `manage_status_line` enabled in `~/.sage/config.json` (default), the extension maintains a footer status line (blocked/flagged counts and recent reason, plus fresh risky skill findings) via pi's status API. Disable it there if you set your own.
 
-Covered tools: `bash`, `powershell`, `read`, `write`, `edit`, `grep`, `find`, `ls`, plus `url_context` and `web_search` from [`pi-web-search`](https://www.npmjs.com/package/pi-web-search).
+Covered tools: `bash`, `powershell`, `read`, `write`, `edit`, `grep`, `find`, `ls`, plus `web_search`, `fetch_content` and `source_check` from [`pi-web-access`](https://www.npmjs.com/package/pi-web-access) (`get_search_content` is a local lookup and is not mapped).
 
 The Sage MCP server is registered as `sage`, providing `sage_report_false_positive` and `sage_list_audit_entries`. It requires pi's built-in MCP support (on by default).
 

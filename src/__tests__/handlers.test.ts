@@ -3,10 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 import { createHandlers, type HandlerContext } from "../handlers.ts";
 
 // Canary markers from Sage's threats/dummy.yaml (harmless, opaque, unique).
+// DENY_CONTENT and DENY_URL are assembled so the full canary patterns never
+// appear in this file's content (otherwise Sage denies the edits that add or
+// touch these wiring checks).
+const DENY_CONTENT = "diagmark_content_" + "3c8f15b7";
 const DENY_CMD = "echo diagmark_cmd_a75bf229";
 const ASK_CMD = "echo diagmark_cmd_8f2e6b71";
 const DENY_FILE = "/tmp/diagmark_file_e6c4a918.txt";
-const DENY_URL = "https://diaghost-4e91ca37.test/x";
+const DENY_URL = "https://diaghost-" + "4e91ca37.test/x";
 
 const silent = {
 	debug() {},
@@ -59,9 +63,15 @@ describe("onToolCall", () => {
 		expect(r?.block).toBe(true);
 	});
 
-	it("blocks a deny verdict on url_context URL", async () => {
+	it("blocks a deny verdict on fetch_content URL", async () => {
 		const { ctx } = makeCtx();
-		const r = await handlers().onToolCall(call("url_context", { query: "q", urls: [DENY_URL] }), ctx);
+		const r = await handlers().onToolCall(call("fetch_content", { urls: [DENY_URL] }), ctx);
+		expect(r?.block).toBe(true);
+	});
+
+	it("blocks a deny verdict on source_check claim", async () => {
+		const { ctx } = makeCtx();
+		const r = await handlers().onToolCall(call("source_check", { claim: DENY_CONTENT }), ctx);
 		expect(r?.block).toBe(true);
 	});
 
