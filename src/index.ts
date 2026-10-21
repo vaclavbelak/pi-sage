@@ -55,22 +55,43 @@ export default async function sage(pi: ExtensionAPI): Promise<void> {
 	});
 
 	// sage_report_false_positive / sage_list_audit_entries. A user-defined "sage" server wins.
-	try {
-		pi.registerMcpServer("sage", {
-			command: process.execPath,
-			args: [MCP_SERVER_PATH],
-			env: { SAGE_AGENT_RUNTIME: PI_RUNTIME },
-		});
-	} catch (error) {
-		logger.debug("Sage MCP server registration failed", { error: String(error) });
-	}
+	// Registered from session_start, not at load time: session_start is post-bind (load-time action
+	// methods throw), so we can probe whether the session has MCP support — e.g. pi-subagents
+	// background children that select no MCP tools load no `mcp` consumer, and registering there
+	// makes pi report a spurious "no loaded extension connects MCP servers" error. When builtin:mcp
+	// (or a replacement) is loaded, post-bind registration reaches it right away via the
+	// mcp_servers_change listener. Registered once per extension instance/load; each fresh
+	// instance (e.g. after reload) deliberately registers again in its runtime. Repeating
+	// session_start (reload/resume/fork events on the same instance) is a no-op.
+	let sageMcpRegistered = false;
+	const registerSageMcpServer = (ctx: HandlerContext): void => {
+		if (sageMcpRegistered) return;
+		try {
+			const hasMcpConsumer = pi
+				.getCommands()
+				.some((c) => c.name === "mcp" || c.name.startsWith("mcp:"));
+			if (!hasMcpConsumer) return;
+			pi.registerMcpServer("sage", {
+				command: process.execPath,
+				args: [MCP_SERVER_PATH],
+				env: { SAGE_AGENT_RUNTIME: PI_RUNTIME },
+			});
+			sageMcpRegistered = true;
+		} catch (error) {
+			logger.warn("Sage MCP server registration failed", { error: String(error) });
+		}
+	};
 
-	// One scan per session id; session_start also fires on reload/resume/fork, and pi
+	// One scan per session id; session_start also fires on reload/resume/fork, and pi 
+	// invalidates the previous ctx on reload. Everything is read from pi/ctx synchronously,
+	// and results are delivered through whichever ctx is current (a stale ctx throws).
+	// Repeating the event does not re-register (the flag is one-shot per instance).
 	// invalidates the previous ctx on reload. Everything is read from pi/ctx synchronously,
 	// and results are delivered through whichever ctx is current (a stale ctx throws).
 	const scans = new Map<string, Promise<string[]>>();
 	const delivered = new Set<string>();
 	pi.on("session_start", (_event, ctx) => {
+		registerSageMcpServer(ctx as unknown as HandlerContext);
 		const sessionId = ctx.sessionManager.getSessionId();
 		if (statusLine) {
 			void statusLine.start(sessionId).then(() => statusLine.render(ctx));
